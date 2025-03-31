@@ -4,20 +4,16 @@ FLIR_AX8::FLIR_AX8(string hostname)
 {
 	string ip = resolveHostname(hostname);
 	mb = new modbus(ip, 502);
+}
+
+void FLIR_AX8::Connection_Modbus()
+{
 	mb->modbus_connect();
 }
 
-int FLIR_AX8::ConnectionFLIR_AX8()
+void FLIR_AX8::Deconnection_Modbus()
 {
-	string chemin_sshpass = "/usr/bin/sshpass"; //chemin absolue
-	string composite =chemin_sshpass + " -p 3vlig ssh fliruser@neco-10655D.local";
-    int status = system(composite.c_str());
-    if (status != 0) 
-	{
-		cout << "Echec de la connexion" <<endl;
-        return -1; // Échec de la connexion
-    } else cout << "Connexion réussie" << endl;
-    return 0; // Connexion réussie
+	mb->modbus_close();
 }
 
 /***
