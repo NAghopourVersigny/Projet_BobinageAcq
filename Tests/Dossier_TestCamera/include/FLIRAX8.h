@@ -61,6 +61,8 @@ public:
 	FLIR_AX8(string hostname);
 
 	int ConnectionFLIR_AX8();
+	void Connection_Modbus();
+	void Deconnection_Modbus();
 
 	int requerir_Image();
 
