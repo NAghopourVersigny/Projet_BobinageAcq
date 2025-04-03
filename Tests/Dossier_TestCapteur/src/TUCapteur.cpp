@@ -3,21 +3,23 @@
 #include <linux/i2c-dev.h>
 #include <fcntl.h>
 #include <string>
+#include <sys/ioctl.h>
+#include <unistd.h>
 
-using namespace std; 
+using namespace std;
 
-int main(){
+int main()
+{
+    // Modification de l'encapsulation
 
-    //Modification de l'encapsulation
-    this->atempAmb=tempAmb;
-    this->ahumidite=humidite;
+    // Instantiation objet leContexte
+    Contexte *leContexte = new Contexte(0x28);
 
-    //Instantiation objet leContexte
-    Contexte* leContexte = new Contexte(tempAmb, humidite, tension_reseau, dateheure);
+    // Appel de la methode lireContexte
+    leContexte->lireContexte();
 
-    //Appel des méthodes
-    cout << "Température ambiance :" << leContexte->getTempAmb() << endl;
-    cout << "Humidité :" << leContexte->getHumidite() << endl;
+    cout << "Température : " << leContexte->getTemp() << endl;
+    cout << "Humidité : " << leContexte->getHumidite() << endl;
 
     return 0;
 }

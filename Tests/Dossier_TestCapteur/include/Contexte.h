@@ -1,25 +1,27 @@
-#ifndef CONTEXTE_H
-#define CONTEXTE_H
-
 #include <string>
 #include <iostream>
+#include <linux/i2c-dev.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
 
 using namespace std;
 
 class Contexte
 {
 private:
-    float tempAmb;
+    int addr = 0x28;
     float humidite;
-    string dateheure;
+    float temp;
 
 public:
-    Contexte(float tempAmb, float humidite, string dateheure);
-    Contexte();
-    int obtenirContexte();
-    float getTempAmb();
-    float getHumidite();
-    string getDateHeure();
-};
+    Contexte(int addr);
+    void lireContexte();
 
-#endif
+    float getHumidite();
+    float getTemp();
+
+private:
+    void calculerHumidite(char data[4]);
+    void calculerTemp(char data[4]);
+};
