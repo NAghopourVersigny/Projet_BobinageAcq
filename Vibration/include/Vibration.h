@@ -20,14 +20,14 @@ private:
      */
     float vitesseVibration;
 
-    string dateheure;
-    double courant_mA;
+
 
 public:
 
-    double Calcul_conv(courant_mA);
+    double Calcul_conv( double courant_mA);
 
-    Vibration(string axe, string dateheure);
+
+    Vibration(string axe);
 
     /**
      * @brief méthode permettant de lire la valeur de la vibration pour
@@ -44,7 +44,6 @@ public:
      */
     float getVitesseVibration();
 
-    string getDateHeure();
 };
 
 #endif
