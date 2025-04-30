@@ -8,22 +8,13 @@
 
 using namespace std;
 
+// Constructeur de la classe Contexte. Il initialise l'I2C du capteur.
 Contexte::Contexte(int addr)
 {
     this->addr = addr;
 }
 
-float Contexte::getHumidite()
-{
-    this->humidite = humidite;
-    return humidite;
-}
-
-float Contexte::getTemp()
-{
-    this->temp = temp;
-    return temp;
-}
+// Méthode pour lire les données du capteur via I2C
 void Contexte::lireContexte()
 {
     char data[4];
@@ -38,32 +29,12 @@ void Contexte::lireContexte()
 
     write(fd, data, 0);
 
-    usleep(150000);
+    usleep(150000);  // Pause de 150 ms pour laisser le temps au capteur de traiter la demande
 
-    read(fd, data, 4);
+    read(fd, data, 4); // Lit 4 octets de données depuis le capteur via I2C
 
-    close(fd);
+    close(fd); // Ferme le fichier du périphérique I2C
 
-    calculerHumidite(data);
-    calculerTemp(data);
-}
-
-void Contexte::calculerHumidite(char data[4])
-{
-    short resultat1 = data[0] & 0x3F;
-    resultat1 = (resultat1 << 8) + data[1];
-    this->humidite = (float)resultat1;
-    float coefficient = 1.52;
-    this->humidite = this->humidite * coefficient;
-    this->humidite = (this->humidite * 100);
-    this->humidite = this->humidite / 16383;
-}
-
-void Contexte::calculerTemp(char data[4])
-{
-    short resultat2 = data[3] & 0xFC;
-    resultat2 = (data[2] << 8) + resultat2;
-    resultat2 = resultat2 >> 2;
-    this->temp = resultat2;
-    this->temp = ((this->temp * 165) / 16383) - 40;
+    calculerHumidite(data);  // Appelle la méthode pour calculer l'humidité avec les données lues précédemment
+    calculerTemp(data); // Appelle la méthode pour calculer la température avec les données lues précédement
 }
