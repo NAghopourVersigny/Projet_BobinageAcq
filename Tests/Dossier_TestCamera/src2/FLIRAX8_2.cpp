@@ -1,4 +1,8 @@
 #include "../include/FLIRAX8.h"
+#include "Poco/Net/StreamSocket.h"
+#include "Poco/Net/SocketAddress.h"
+
+using Poco::Net::StreamSocket;
 
 FLIR_AX8::FLIR_AX8(string hostname)
 {
@@ -21,6 +25,29 @@ void FLIR_AX8::Deconnection_Modbus()
  * en faisant une connexion ssh par exemple
  * Faire en sudo... pour la suite (tous les utilisateurs doivent avoir la clé)
 */
+int FLIR_AX8::setVisionMode(int mode) {
+    // mode = 0 pour visuel, 1 pour thermique
+    const uint16_t registre_mode = 4001; // À remplacer par le bon registre
+
+    mb->modbus_set_slave_id(104); // Adapter l'ID esclave
+
+    if (mb->modbus_write_register(registre_mode, mode) == -1) {
+        cout << "Erreur : Impossible d’écrire le mode." << endl;
+        return -1;
+    }
+
+    usleep(200000); // Attente de 200ms
+
+    uint16_t confirmation;
+    if (mb->modbus_read_holding_registers(registre_mode, 1, &confirmation) == -1) {
+        cout << "Erreur : Lecture du registre après écriture échouée." << endl;
+        return -1;
+    }
+
+    return (confirmation == mode) ? 0 : -1;
+}
+
+
 int FLIR_AX8::requerir_Image()
 {
  	Username = "fliruser";
@@ -80,8 +107,272 @@ float FLIR_AX8::acquerirTempMin()
 	return valeur;
 }
 
+void FLIR_AX8::set_image_mode(int mode) {
+    // Adresse de la caméra (changer l'IP si nécessaire)
+    string server = "10.119.1.19";  // Remplacez par l'IP de votre caméra
+    int port = 44818; // Port EtherNet/IP par défaut pour les appareils FLIR
+
+    uint8_t preambule[] = {0x35, 0x70, 0x01};
+
+    // Données pour chaque mode (IR, Visual, etc.)
+    uint8_t data_ir_1[] = { 
+        0x2a, 0x2e, 0x69, 0x6d, 0x61, 0x67, 0x65, 0x2e, 0x73, 0x79, 0x73, 0x69, 0x6d, 0x67, 0x2e, 0x66, 0x75, 
+        0x73, 0x69, 0x6f, 0x6e, 0x2e, 0x66, 0x75, 0x73, 0x69, 0x6f, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x2e, 0x66, 
+        0x75, 0x73, 0x69, 0x6f, 0x6e, 0x4d, 0x6f, 0x64, 0x65, 0x01, 0x00, 0x00, 0x00
+    };
+
+    uint8_t data_ir_2[] = { 
+        0x2c, 0x2e, 0x69, 0x6d, 0x61, 0x67, 0x65, 0x2e, 0x73, 0x79, 0x73, 0x69, 0x6d, 0x67, 0x2e, 0x66, 0x75, 
+        0x73, 0x69, 0x6f, 0x6e, 0x2e, 0x66, 0x75, 0x73, 0x69, 0x6f, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x2e, 0x75, 
+        0x73, 0x65, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x53, 0x70, 0x61, 0x6e, 0x01, 0x00, 0x00, 0x00
+    };
+
+    uint8_t data_visual_1[] = { 
+        0x2a, 0x2e, 0x69, 0x6d, 0x61, 0x67, 0x65, 0x2e, 0x73, 0x79, 0x73, 0x69, 0x6d, 0x67, 0x2e, 0x66, 0x75, 
+        0x73, 0x69, 0x6f, 0x6e, 0x2e, 0x66, 0x75, 0x73, 0x69, 0x6f, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x2e, 0x66, 
+        0x75, 0x73, 0x69, 0x6f, 0x6e, 0x4d, 0x6f, 0x64, 0x65, 0x01, 0x00, 0x00, 0x00
+    };
+
+    uint8_t data_visual_2[] = { 
+        0x2c, 0x2e, 0x69, 0x6d, 0x61, 0x67, 0x65, 0x2e, 0x73, 0x79, 0x73, 0x69, 0x6d, 0x67, 0x2e, 0x66, 0x75, 
+        0x73, 0x69, 0x6f, 0x6e, 0x2e, 0x66, 0x75, 0x73, 0x69, 0x6f, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x2e, 0x75, 
+        0x73, 0x65, 0x4c, 0x65, 0x76, 0x65, 0x6c, 0x53, 0x70, 0x61, 0x6e, 0x00, 0x00, 0x00, 0x00
+    };
+
+    // Créer une connexion socket avec la caméra FLIR via EtherNet/IP
+    Poco::Net::SocketAddress address(server, port);
+    Poco::Net::StreamSocket socket(address);
+
+     auto send_with_preambule = [&](uint8_t* data, size_t data_len) {
+        std::vector<uint8_t> buffer(sizeof(preambule) + data_len);
+        memcpy(buffer.data(), preambule, sizeof(preambule));
+        memcpy(buffer.data() + sizeof(preambule), data, data_len);
+        socket.sendBytes(buffer.data(), buffer.size());
+    };
+
+    switch (mode) {
+        case 1: // Mode IR
+            send_with_preambule(data_ir_1, sizeof(data_ir_1));
+            send_with_preambule(data_ir_2, sizeof(data_ir_2));
+            break;
+        case 2: // Mode Visual
+            send_with_preambule(data_visual_1, sizeof(data_visual_1));
+            send_with_preambule(data_visual_2, sizeof(data_visual_2));
+            break;
+        default:
+            std::cout << "Mode non valide!" << std::endl;
+            break;
+    }
+/*
+    // Sélectionner le mode à utiliser et envoyer les données correspondantes
+    switch (mode) {
+        case 1: // Mode IR
+            socket.sendBytes(préambule, sizeof(préambule));
+            socket.sendBytes(data_ir_1, sizeof(data_ir_1));  // Envoi des données pour le mode IR
+            socket.sendBytes(data_ir_2, sizeof(data_ir_2));  // Envoi des données supplémentaires pour le mode IR
+            break;
+        case 2: // Mode Visual
+            socket.sendBytes(préambule, sizeof(préambule));
+            socket.sendBytes(data_visual_1, sizeof(data_visual_1));  // Envoi des données pour le mode Visual
+            socket.sendBytes(data_visual_2, sizeof(data_visual_2));  // Envoi des données supplémentaires pour le mode Visual
+            break;
+        default:
+            cout << "Mode non valide!" << endl;
+            break;
+    }*/
+}
+
+/* v4
+int FLIR_AX8::enableThermalMode() {
+    uint16_t mode_value = 0x01;  // Valeur pour le mode thermique
+    uint16_t registre_mode = 4001; // Adresse du registre Mode d'Image
+
+    mb->modbus_set_slave_id(104); // Assurez-vous que l'ID de l'esclave est correct
+
+    // Lire la valeur actuelle du registre Mode d'image
+    uint16_t current_value;
+    if (mb->modbus_read_holding_registers(registre_mode, 1, &current_value) == -1) {
+        cout << "Erreur : Impossible de lire le registre Mode d'Image." << endl;
+        return -1;
+    }
+
+    // Écrire la nouvelle valeur pour le mode thermique
+    if (mb->modbus_write_register(registre_mode, mode_value) == -1) {
+        cout << "Erreur : Impossible d'écrire dans le registre Mode." << endl;
+        return -1;
+    }
+
+    // Attente et vérification
+    usleep(200000);
+    if (mb->modbus_read_holding_registers(registre_mode, 1, &current_value) == -1) {
+        cout << "Erreur : Impossible de relire le registre Mode après écriture." << endl;
+        return -1;
+    }
+
+    if (current_value == mode_value) {
+        cout << "Mode thermique activé avec succès." << endl;
+        return 1;
+    } else {
+        cout << "Erreur : Le changement de mode thermique a échoué." << endl;
+        return -1;
+    }
+}
+
+int FLIR_AX8::enableVisualMode() {
+    uint16_t mode_value = 0x01;  // Valeur pour le mode visuel
+    uint16_t registre_mode = 4001; // Adresse du registre Mode d'Image
+
+    mb->modbus_set_slave_id(104);
+
+    uint16_t current_value;
+    if (mb->modbus_read_holding_registers(registre_mode, 1, &current_value) == -1) {
+        cout << "Erreur : Impossible de lire le registre Mode d'Image." << endl;
+        return -1;
+    }
+
+    if (mb->modbus_write_register(registre_mode, mode_value) == -1) {
+        cout << "Erreur : Impossible d'écrire dans le registre Mode." << endl;
+        return -1;
+    }
+
+    usleep(200000);
+    if (mb->modbus_read_holding_registers(registre_mode, 1, &current_value) == -1) {
+        cout << "Erreur : Impossible de relire le registre Mode après écriture." << endl;
+        return -1;
+    }
+
+    if (current_value == mode_value) {
+        cout << "Mode visuel activé avec succès." << endl;
+        return 1;
+    } else {
+        cout << "Erreur : Le changement de mode visuel a échoué." << endl;
+        return -1;
+    }
+}
+*/
+
+
+/*v1
+int FLIR_AX8::toggle_IsothermEnable() {
+    uint16_t isotherm_value;
+    uint16_t registre_isotherm = 4001;  // Remplace par l'adresse correcte du registre "Isotherm Enable"
+
+    mb->modbus_set_slave_id(1); // Assurez-vous que l'ID de l'esclave est correct
+
+    // Lire la valeur actuelle
+    if (mb->modbus_read_holding_registers(registre_isotherm, 1, &isotherm_value) == -1) {
+        cout << "Erreur : Impossible de lire le registre Isotherm Enable." << endl;
+        return -1;
+    }
+    cout << "Valeur actuelle du registre Isotherm Enable : " << isotherm_value << endl;
+
+    // Inverser la valeur (0 -> 1 ou 1 -> 0)
+    uint16_t nouvelle_valeur = (isotherm_value == 0) ? 1 : 0;
+
+    // Écrire la nouvelle valeur
+    if (mb->modbus_write_register(registre_isotherm, nouvelle_valeur) == -1) {
+        cout << "Erreur : Impossible d'écrire dans le registre Isotherm Enable." << endl;
+        return -1;
+    }
+    cout << "Nouvelle valeur écrite : " << nouvelle_valeur << endl;
+
+    // Vérifier si l'écriture a bien eu lieu
+    if (mb->modbus_read_holding_registers(registre_isotherm, 1, &isotherm_value) == -1) {
+        cout << "Erreur : Impossible de relire le registre après écriture." << endl;
+        return -1;
+    }
+    cout << "Valeur après écriture : " << isotherm_value << endl;
+
+    return 1;
+}*/
+
+/* v3
+int FLIR_AX8::toggle_IsothermEnable() {
+    uint16_t isotherm_value;
+    uint16_t registre_isotherm = 4001; // L'adresse correcte du registre Isotherm Enable
+
+    mb->modbus_set_slave_id(104); // Assurez-vous que l'ID de l'esclave est correct
+
+    // Lire la valeur actuelle du registre Isotherm
+    if (mb->modbus_read_holding_registers(registre_isotherm, 1, &isotherm_value) == -1) {
+        cout << "Erreur : Impossible de lire le registre Isotherm Enable." << endl;
+        return -1;
+    }
+    cout << "Valeur actuelle du registre Isotherm Enable : " << isotherm_value << endl;
+
+    // Inverser la valeur (0 -> 1 ou 1 -> 0)
+    uint16_t nouvelle_valeur = (isotherm_value == 0) ? 1 : 0;
+
+    // Écrire la nouvelle valeur dans le registre
+    if (mb->modbus_write_register(registre_isotherm, nouvelle_valeur) == -1) {
+        cout << "Erreur : Impossible d'écrire dans le registre Isotherm Enable." << endl;
+        return -1;
+    }
+    cout << "Nouvelle valeur écrite : " << nouvelle_valeur << endl;
+
+    // Attente pour s'assurer que la caméra a pris en compte le changement
+    usleep(200000); // Attente de 200ms, ajustez si nécessaire
+
+    // Vérifier si l'écriture a bien eu lieu en relisant le registre
+    if (mb->modbus_read_holding_registers(registre_isotherm, 1, &isotherm_value) == -1) {
+        cout << "Erreur : Impossible de relire le registre après écriture." << endl;
+        return -1;
+    }
+
+    cout << "Valeur après écriture : " << isotherm_value << endl;
+
+    // Ajouter un contrôle supplémentaire pour confirmer le changement de mode
+    if (isotherm_value == nouvelle_valeur) {
+        cout << "Mode modifié avec succès." << endl;
+        return 1;
+    } else {
+        cout << "Erreur : Le changement de mode a échoué." << endl;
+        return -1;
+    }
+}
+*/
+
+
+/* v2
+int FLIR_AX8::toggle_IsothermEnable() {
+    uint16_t isotherm_value;
+    uint16_t registre_isotherm = 6; // Remplace par l'adresse correcte du registre "Isotherm Enable"
+
+    mb->modbus_set_slave_id(1); // Assurez-vous que l'ID de l'esclave est correct
+
+    // Lire la valeur actuelle
+    if (mb->modbus_read_holding_registers(registre_isotherm, 1, &isotherm_value) == -1) {
+        cout << "Erreur : Impossible de lire le registre Isotherm Enable." << endl;
+        return -1;
+    }
+    cout << "Valeur actuelle du registre Isotherm Enable : " << isotherm_value << endl;
+
+    // Inverser la valeur (0 -> 1 ou 1 -> 0)
+    uint16_t nouvelle_valeur = (isotherm_value == 0) ? 1 : 0;
+
+    // Écrire la nouvelle valeur
+    if (mb->modbus_write_register(registre_isotherm, nouvelle_valeur) == -1) {
+        cout << "Erreur : Impossible d'écrire dans le registre Isotherm Enable." << endl;
+        return -1;
+    }
+    cout << "Nouvelle valeur écrite : " << nouvelle_valeur << endl;
+
+    // Attente pour s'assurer que la valeur est bien prise en compte
+    usleep(100000); // Pause de 100ms
+
+    // Vérifier si l'écriture a bien eu lieu
+    if (mb->modbus_read_holding_registers(registre_isotherm, 1, &isotherm_value) == -1) {
+        cout << "Erreur : Impossible de relire le registre après écriture." << endl;
+        return -1;
+    }
+    cout << "Valeur après écriture : " << isotherm_value << endl;
+
+    return 1;
+}
+
+
 //Méthode incomplète
-int FLIR_AX8::mettre_visible()
+/*int FLIR_AX8::mettre_visible()
 {
 	uint16_t test[20];
 	uint16_t normal = 0;
@@ -129,18 +420,9 @@ int FLIR_AX8::mettre_visible()
 	mb->modbus_write_registers(4061,3,test); //4D 61 6E 75 61 6C*/
 	
 	/*mb->modbus_write_registers(4121,2,&normal); //Span
-	mb->modbus_write_registers(4141,2,&normal); //Level*/
-}
+	mb->modbus_write_registers(4141,2,&normal); //Level
 
-
-//Impossible raison on a pas les permissions
-int FLIR_AX8::supprimer_image()
-{
-/* 	sleep(5);
-	composite ="sshpass -p hello ssh root@neco-10655D.local rm -f /FLIR/system/images/" +"*.jpg";
-	system(composite.c_str()); */
-	return 0;
-}
+*/
 
 bool FLIR_AX8::alarme()
 {
@@ -188,4 +470,3 @@ string FLIR_AX8::resolveHostname(const std::string &hostname)
 
 	return ipstr;
 }
-
