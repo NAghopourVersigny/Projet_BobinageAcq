@@ -11,7 +11,7 @@ Apprentissage::Apprentissage()
 {
     Camera* laCamera = new Camera("neco-10655D.local");
 }
-/*void interrogationBDD(){
+/*bool interrogationBDD(){
 
 //Connex
     MYSQL *conn;
@@ -29,12 +29,11 @@ Apprentissage::Apprentissage()
 
 }*/
 
-void Apprentissage::lancementApprentissageTemp()
+void Apprentissage::lancerApprentissageTemp()
 {
 
     int i;
     int temps;
-    vector<float> tableau(i);
 
     auto start = chrono::steady_clock::now();
 
@@ -45,8 +44,8 @@ void Apprentissage::lancementApprentissageTemp()
         float temperatureMax = laCamera->obtenirTempMax();
 
         // Ajouter les températures au tableau
-        tableau.push_back(temperatureMoy);
-        tableau.push_back(temperatureMax);
+        tempMoy.push_back(temperatureMoy);
+        tempMax.push_back(temperatureMax);
 
         // Attendre 1 seconde entre chaque lecture
         sleep(1);
@@ -60,10 +59,20 @@ mysql_query(conn, "UPDATE Machine SET apprentissageTermineTemp = 1");
 
 }*/
 
-void Apprentissage::determinationSeuilMax()
+void Apprentissage::determinerSeuilMax(vector<float> tempMax)
 {
+if (!tempMax.empty())
+    {
+        float temp_Max = *max_element(tempMax.begin(), tempMax.end());
+        float seuilTempMax = temp_Max * 1.15f;
+    }
 }
 
-void Apprentissage::determinationSeuilMoy()
+void Apprentissage::determinerSeuilMoy(vector<float> tempMoy)
 {
+    if (!tempMoy.empty())
+    {
+        float temp_Moy = *max_element(tempMoy.begin(), tempMoy.end());
+        float seuilTempMoy = temp_Moy * 1.15f;
+    }
 }
