@@ -2,43 +2,53 @@
 #include <iostream>
 #include <chrono>
 #include <unistd.h>
+#include "../../../mariadb-connector-cpp-1.0.2-rhel9-amd64/include/mariadb/conncpp.hpp"
 #include "../include/Apprentissage.h"
 #include "../include/Camera.h"
+#include "../include/bdd.h"
 
 using namespace std;
+using namespace sql;
+using namespace mariadb;
 
 Apprentissage::Apprentissage()
 {
     Camera* laCamera = new Camera("neco-10655D.local");
 }
-/*bool interrogationBDD(){
 
-//Connex
-    MYSQL *conn;
-    MYSQL_RES *res;
-    MYSQL_ROW row;
+bool Apprentissage::interrogerBDDTemp(){
 
-    // Initialisation
-    conn = mysql_init(NULL);
+BDD* laBDD = new BDD("jdbc:mariadb://localhost:3306/BobinageAcq");
 
-    // Connexion à la BDD
-    mysql_real_connect(conn, "localhost", "root", "adminECEI", "ProjetBobinageAcq", 0, NULL, 0);
+// Instantiate Driver
+Driver* driver = get_driver_instance();
 
-    //Requete SQL
-    mysql_query(conn, "SELECT apprentissageTermineTemp FROM Machine") == 0
+// Configure Connection
+SQLString url = laBDD->getURL();
+Properties properties({{"user", ""}, {"password", ""}});
 
-}*/
+// Establish Connection
+unique_ptr<Connection> conn(driver->connect(url, properties));
+
+
+// Create a new PreparedStatement
+unique_ptr<PreparedStatement> stmnt(conn->prepareStatement("SELECT apprentissageTermineTemp FROM Machine WHERE id = ?"));
+stmnt->setInt(1, 1);
+
+// Execute query
+ResultSet *res = stmnt->executeQuery();
+
+// Loop through and print results
+while (res->next()) {
+       cout << "apprentissageTermineTemp = " << res->getInt(1);
+}
+
+return 0;
+
+}
 
 void Apprentissage::lancerApprentissageTemp()
 {
-
-    int i;
-    int temps;
-
-    auto start = chrono::steady_clock::now();
-
-    do
-    {
         // Acquisition des températures
         float temperatureMoy = laCamera->obtenirTempMoy();
         float temperatureMax = laCamera->obtenirTempMax();
@@ -50,29 +60,27 @@ void Apprentissage::lancerApprentissageTemp()
         // Attendre 1 seconde entre chaque lecture
         sleep(1);
 
-    } while (chrono::duration_cast<chrono::seconds>(chrono::steady_clock::now() - start).count() < temps);
+        if (!tempMax.empty())
+        {
+        float temp_Max = *max_element(tempMax.begin(), tempMax.end());
+        float seuilTempMax = temp_Max * 1.15f;
+        }
+
+        if (!tempMoy.empty())
+        {
+        float temp_Moy = *max_element(tempMoy.begin(), tempMoy.end());
+        float seuilTempMoy = temp_Moy * 1.15f;
+        }
+
+
+
 }
 
-/*void validationApprentissage(){
+/*void Apprentissage::validerApprentissage(){
 
 mysql_query(conn, "UPDATE Machine SET apprentissageTermineTemp = 1");
 
 }*/
 
-void Apprentissage::determinerSeuilMax(vector<float> tempMax)
-{
-if (!tempMax.empty())
-    {
-        float temp_Max = *max_element(tempMax.begin(), tempMax.end());
-        float seuilTempMax = temp_Max * 1.15f;
-    }
-}
-
-void Apprentissage::determinerSeuilMoy(vector<float> tempMoy)
-{
-    if (!tempMoy.empty())
-    {
-        float temp_Moy = *max_element(tempMoy.begin(), tempMoy.end());
-        float seuilTempMoy = temp_Moy * 1.15f;
-    }
+Apprentissage::~Apprentissage() {
 }
