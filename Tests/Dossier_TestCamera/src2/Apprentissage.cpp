@@ -2,7 +2,7 @@
 #include <iostream>
 #include <chrono>
 #include <unistd.h>
-#include "../../../mariadb-connector-cpp-1.0.2-rhel9-amd64/include/mariadb/conncpp.hpp"
+#include <mariadb/conncpp.hpp>
 #include "../include/Apprentissage.h"
 #include "../include/Camera.h"
 #include "../include/bdd.h"
