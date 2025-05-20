@@ -25,7 +25,7 @@ Driver* driver = get_driver_instance();
 
 // Configure Connection
 SQLString url = laBDD->getURL();
-Properties properties({{"user", ""}, {"password", ""}});
+Properties properties({{"user", "root"}, {"password", "adminECEI"}});
 
 // Establish Connection
 unique_ptr<Connection> conn(driver->connect(url, properties));
