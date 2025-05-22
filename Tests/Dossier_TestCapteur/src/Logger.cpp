@@ -29,8 +29,8 @@ void Logger::log(Level level, const std::string& message) {
     if (logFile.is_open())
         logFile << fullMessage.str() << std::endl;
 
-    if (consoleOutput)
-        std::cout << fullMessage.str() << std::endl;
+   /* if (consoleOutput)
+        std::cout << fullMessage.str() << std::endl; */
 }
 
 void Logger::info(const std::string& msg)    { log(INFO, msg); }
@@ -50,9 +50,11 @@ std::string Logger::currentTimestamp() {
     localtime_r(&now_time_t, &tm);
 #endif
 
+    char buffer[32];
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &tm);
+
     std::ostringstream oss;
-    oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S")
-        << "." << std::setfill('0') << std::setw(3) << now_ms.count();
+    oss << buffer << "." << std::setfill('0') << std::setw(3) << now_ms.count();
     return oss.str();
 }
 
