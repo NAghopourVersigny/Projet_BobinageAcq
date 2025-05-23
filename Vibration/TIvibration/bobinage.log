@@ -1,0 +1,31 @@
+[2025-05-22 13:19:48.997] [3472ms] [WARNING] Courant en dehors des limites 4-20mA : 3.900000 mA
+[2025-05-22 13:20:08.185] [0ms] [ERROR] Axe incorrect fourni au constructeur Vibration : x
+[2025-05-22 13:20:08.185] [1969ms] [ERROR] Exception (argument invalide) dans main : Axe incorrect
+[2025-05-22 13:28:30.671] [1745ms] [WARNING] Courant en dehors des limites 4-20mA : 3.000000 mA
+[2025-05-22 13:31:18.482] [0ms] [ERROR] Axe incorrect fourni au constructeur Vibration : y
+[2025-05-22 13:31:18.482] [1655ms] [ERROR] Exception (argument invalide) dans main : Axe incorrect
+[2025-05-22 13:37:45.646] [2340ms] [INFO] Démarrage de l'application.
+[2025-05-22 13:37:46.949] [3643ms] [INFO] Fin de l'application.
+[2025-05-22 13:41:18.058] [2185ms] [INFO] Démarrage de l'application.
+[2025-05-22 13:41:26.321] [8263ms] [WARNING] Courant en dehors des limites 4-20mA : 2.000000 mA
+[2025-05-22 13:56:55.856] [2985ms] [INFO] Démarrage de l'application.
+[2025-05-22 13:56:55.856] [0ms] [ERROR] Axe incorrect fourni au constructeur Vibration : x
+[2025-05-22 13:56:55.857] [2985ms] [ERROR] Exception (argument invalide) dans main : Axe incorrect
+[2025-05-22 13:56:55.857] [2985ms] [INFO] Fin de l'application.
+[2025-05-22 14:02:54.469] [11526ms] [INFO] Démarrage de l'application.
+[2025-05-22 14:02:54.469] [0ms] [ERROR] Axe incorrect fourni au constructeur Vibration : u
+[2025-05-22 14:02:54.469] [11526ms] [ERROR] Exception (argument invalide) dans main : Axe incorrect
+[2025-05-22 14:02:54.469] [11526ms] [INFO] Fin de l'application.
+[2025-05-22 14:12:05.125] [2828ms] [INFO] Démarrage de l'application.
+[2025-05-22 14:12:07.229] [4932ms] [INFO] Fin de mesure.
+[2025-05-22 14:52:24.954] [2503ms] [INFO] Démarrage de l'application.
+[2025-05-22 16:58:36.676] [7571721ms] [WARNING] Courant en dehors des limites 4-20mA : 0.000000 mA
+[2025-05-23 09:32:19.903] [2577ms] [INFO] Démarrage de l'application.
+[2025-05-23 09:32:22.486] [2583ms] [WARNING] Courant en dehors des limites 4-20mA : 3.000000 mA
+[2025-05-23 09:32:39.239] [2521ms] [INFO] Démarrage de l'application.
+[2025-05-23 09:32:43.271] [6552ms] [INFO] Fin de mesure des vibrations.
+[2025-05-23 10:15:56.002] [3996ms] [INFO] Démarrage de l'application.
+[2025-05-23 10:15:56.003] [0ms] [ERROR] Axe incorrect fourni au constructeur Vibration : x
+[2025-05-23 10:15:56.003] [3997ms] [ERROR] Exception (argument invalide) dans main : Axe incorrect
+[2025-05-23 10:16:10.938] [2733ms] [INFO] Démarrage de l'application.
+[2025-05-23 10:16:15.156] [4218ms] [WARNING] Courant en dehors des limites 4-20mA : 21.000000 mA
