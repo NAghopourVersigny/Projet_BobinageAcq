@@ -2,24 +2,47 @@
 #include <algorithm>
 #include <iostream>
 #include "bdd.h"
-#include "Camera.h"
+#include "SeuilsIOT.h"
+#include "Vibration.h" //Rajouter le chemin vers le fichier Vibration.h
 
-class Apprentissage{
+class Apprentissage
+{
 
-private : 
-
-    Camera* laCamera;
-    BDD* laBDD;
-    vector<float> tempMoy;
-    vector<float> tempMax;
+private:
+    bool apprentissageTemp;
+    bool apprentissageVibra;
 
 
-public :
-    Apprentissage();
+
+
+public:
+    Apprentissage(bool apprentissageTemp, bool apprentissageVibra);
     ~Apprentissage();
 
-
     bool interrogerBDDTemp();
-    void lancerApprentissageTemp();
-    void validerApprentissage();    
+    /**
+     * @brief 
+     * 
+     * @param laCamera 
+     * @param lesSeuils 
+     */
+    void lancerApprentissageTemp(Camera * laCamera, SeuilsIOT * lesSeuils);
+    bool validerApprentissageTemp();
+    float getSeuilTempMoy() const;
+    float getSeuilTempMax() const;
+
+    bool interrogerBDDVibra();
+    /**
+     * @brief effectue l'apprentissage
+     * 
+     * @param lesVibrations : collection de vibration dans l'ordre : axe X, axe Y et axe Z
+     * @param lesSeuils 
+     */
+    void lancerApprentissageVibra(vector<Vibration> lesVibrations, SeuilsIOT * lesSeuils);
+    bool validerApprentissageVibra();
+
+
+
+
+
 };
