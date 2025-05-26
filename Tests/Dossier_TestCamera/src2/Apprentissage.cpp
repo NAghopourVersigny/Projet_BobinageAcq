@@ -6,81 +6,183 @@
 #include "../include/Apprentissage.h"
 #include "../include/Camera.h"
 #include "../include/bdd.h"
+#include "Vibration.h" //Rajouter le chemin vers le fichier Vibration.h
 
 using namespace std;
 using namespace sql;
 using namespace mariadb;
 
-Apprentissage::Apprentissage()
+Apprentissage::Apprentissage(bool apprentissageTemp, bool apprentissageVibra)
 {
-    Camera* laCamera = new Camera("neco-10655D.local");
-}
-
-bool Apprentissage::interrogerBDDTemp(){
-
-BDD* laBDD = new BDD("jdbc:mariadb://localhost:3306/BobinageAcq");
-
-// Instantiate Driver
-Driver* driver = get_driver_instance();
-
-// Configure Connection
-SQLString url = laBDD->getURL();
-Properties properties({{"user", "root"}, {"password", "adminECEI"}});
-
-// Establish Connection
-unique_ptr<Connection> conn(driver->connect(url, properties));
-
-
-// Create a new PreparedStatement
-unique_ptr<PreparedStatement> stmnt(conn->prepareStatement("SELECT apprentissageTermineTemp FROM Machine WHERE id = ?"));
-stmnt->setInt(1, 1);
-
-// Execute query
-ResultSet *res = stmnt->executeQuery();
-
-// Loop through and print results
-while (res->next()) {
-       cout << "apprentissageTermineTemp = " << res->getInt(1);
-}
-
-return 0;
 
 }
 
-void Apprentissage::lancerApprentissageTemp()
+bool Apprentissage::interrogerBDDTemp()
 {
-        // Acquisition des températures
-        float temperatureMoy = laCamera->obtenirTempMoy();
-        float temperatureMax = laCamera->obtenirTempMax();
+    BDD *laBDD = new BDD();
+    unique_ptr<Connection> conn = laBDD->SeConnecterBDD();
+    cout << "Préparation de la requête" << endl;
 
-        // Ajouter les températures au tableau
-        tempMoy.push_back(temperatureMoy);
-        tempMax.push_back(temperatureMax);
+    unique_ptr<PreparedStatement> stmnt(conn->prepareStatement("SELECT apprentissageTermineTemp FROM Machine WHERE id = ?"));
+    stmnt->setInt(1, 1);
 
-        // Attendre 1 seconde entre chaque lecture
-        sleep(1);
+    cout << "Exécution de la requête" << endl;
+    unique_ptr<ResultSet> res(stmnt->executeQuery());
 
-        if (!tempMax.empty())
-        {
-        float temp_Max = *max_element(tempMax.begin(), tempMax.end());
-        float seuilTempMax = temp_Max * 1.15f;
-        }
+    while (res->next())
+    {
+        cout << "apprentissageTermineTemp = " << res->getBoolean(1) << endl;
+        return res->getBoolean(1);
+    }
 
-        if (!tempMoy.empty())
-        {
-        float temp_Moy = *max_element(tempMoy.begin(), tempMoy.end());
-        float seuilTempMoy = temp_Moy * 1.15f;
-        }
-
-
-
+    return false;
 }
 
-/*void Apprentissage::validerApprentissage(){
+void Apprentissage::lancerApprentissageTemp(Camera *laCamera, SeuilsIOT *lesSeuils)
+{
+    vector<float> tempMoy;
+    vector<float> tempMax;
+    float seuilTempMax;
+    float seuilTempMoy;
+    if (apprentissageTemp == false)
+    {
+        int temps;
+        cout << "Saisir un temps (en secondes) pour l'apprentissage : ";
+        cin >> temps;
 
-mysql_query(conn, "UPDATE Machine SET apprentissageTermineTemp = 1");
+        auto start = chrono::steady_clock::now();
 
-}*/
+        do
+        {
+            float temperatureMoy = laCamera->obtenirTempMoy();
+            float temperatureMax = laCamera->obtenirTempMax();
 
-Apprentissage::~Apprentissage() {
+            tempMoy.push_back(temperatureMoy);
+            tempMax.push_back(temperatureMax);
+
+            sleep(1);
+
+            if (!tempMax.empty())
+            {
+                float temp_Max = *max_element(tempMax.begin(), tempMax.end());
+                seuilTempMax = temp_Max * 1.15f;
+            }
+
+            if (!tempMoy.empty())
+            {
+                float temp_Moy = *max_element(tempMoy.begin(), tempMoy.end());
+                seuilTempMoy = temp_Moy * 1.15f;
+            }
+
+        } while (chrono::duration_cast<chrono::seconds>(chrono::steady_clock::now() - start).count() < temps);
+        lesSeuils->setSeuils_temperature(seuilTempMoy, seuilTempMax);
+    }
+}
+
+bool Apprentissage::validerApprentissageTemp()
+{
+    BDD *laBDD = new BDD();
+    unique_ptr<Connection> conn = laBDD->SeConnecterBDD();
+    cout << "Préparation de la requête" << endl;
+
+    unique_ptr<PreparedStatement> stmnt(conn->prepareStatement("UPDATE Machine SET apprentissageTermineTemp = 1 WHERE id = ?"));
+    stmnt->setInt(1, 1);
+
+    cout << "Exécution de la requête" << endl;
+    stmnt->execute();
+
+    return true;
+}
+
+bool Apprentissage::interrogerBDDVibra()
+{
+    BDD *laBDD = new BDD();
+    unique_ptr<Connection> conn = laBDD->SeConnecterBDD();
+    cout << "Préparation de la requête" << endl;
+
+    unique_ptr<PreparedStatement> stmnt(conn->prepareStatement("SELECT apprentissageTermineVibra FROM Machine WHERE id = ?"));
+    stmnt->setInt(1, 1);
+
+    cout << "Exécution de la requête" << endl;
+    unique_ptr<ResultSet> res(stmnt->executeQuery());
+
+    while (res->next())
+    {
+        cout << "apprentissageTermineVibra = " << res->getBoolean(1) << endl;
+        return res->getBoolean(1);
+    }
+
+    return false;
+}
+
+void Apprentissage::lancerApprentissageVibra(vector<Vibration> lesVibrations, SeuilsIOT *lesSeuils)
+{
+    vector<float> TableauAxeX;
+    vector<float> TableauAxeY;
+    vector<float> TableauAxeZ;
+    float seuilVibraX;
+    float seuilVibraY;
+    float seuilVibraZ;
+    float seuilAxeX;
+    float seuilAxeY;
+    float seuilAxeZ;
+
+    if (this->interrogerBDDVibra() == false)
+    {
+        int temps;
+        cout << "Saisir un temps (en secondes) pour l'apprentissage : ";
+        cin >> temps;
+
+        auto start = chrono::steady_clock::now();
+
+        do
+        {
+            // Stockage des méthodes dans des variables
+
+            ((Vibration)lesVibrations[0])->lire();
+            TableauAxeX.push_back(((Vibration)lesVibrations[0])->getVitesseVibration());
+            TableauAxeY.push_back(((Vibration)lesVibrations[1])->getVitesseVibration());
+            TableauAxeZ.push_back(((Vibration)lesVibrations[2])->getVitesseVibration());
+
+            sleep(1);
+
+            if (!TableauAxeX.empty())
+            {
+                float AxeXMax = *max_element(TableauAxeX.begin(), TableauAxeX.end());
+                seuilAxeX = AxeXMax;
+            }
+
+            if (!TableauAxeY.empty())
+            {
+                float AxeYMax = *max_element(TableauAxeY.begin(), TableauAxeY.end());
+                seuilAxeY = AxeYMax;
+            }
+
+            if (!TableauAxeZ.empty())
+            {
+                float AxeZMax = *max_element(TableauAxeZ.begin(), TableauAxeZ.end());
+                seuilAxeZ = AxeZMax;
+            }
+        } while (chrono::duration_cast<chrono::seconds>(chrono::steady_clock::now() - start).count() < temps);
+        lesSeuils->setSeuils_vibrations(seuilAxeX, seuilAxeY, seuilAxeZ);
+    }
+}
+
+bool Apprentissage::validerApprentissageVibra()
+{
+    BDD *laBDD = new BDD();
+    unique_ptr<Connection> conn = laBDD->SeConnecterBDD();
+    cout << "Préparation de la requête" << endl;
+
+    unique_ptr<PreparedStatement> stmnt(conn->prepareStatement("UPDATE Machine SET apprentissageTermineVibra = 1 WHERE id = ?"));
+    stmnt->setInt(1, 1);
+
+    cout << "Exécution de la requête" << endl;
+    stmnt->execute();
+
+    return true;
+}
+
+Apprentissage::~Apprentissage()
+{
 }
