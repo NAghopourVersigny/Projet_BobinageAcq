@@ -4,6 +4,7 @@
 #include <cstdint>
 #include "../include/CompteurElectrique.h"
 #include "../include/serialib.h"
+#include "../include/Logger.h"
 
 using namespace std;
 
@@ -47,6 +48,10 @@ CompteurElectrique::CompteurElectrique(unsigned char adresse)
 
 int CompteurElectrique::lireValeursReseauTension()
 {
+    Logger logger("Bobinage.log", true);
+
+        logger.info("Démarrage de l'application.");
+
     unsigned char tableregistre[] = {adresse, 0x04, 00, 01, 00, 06, 0x21, 0xC8};
     unsigned char response[17];
 
@@ -159,7 +164,7 @@ int CompteurElectrique::lireValeursReseauIntensitee()
 
 int CompteurElectrique::lireValeursReseauFacteurPuissance()
 {
-    unsigned char tables[] = {adresse, 0x04, 00, 25, 00, 06, 0x61, 0xC3};
+    unsigned char tables[] = {adresse, 0x04, 00, 0x25, 00, 06, 0x61, 0xC3};
     unsigned char answer[17];
 
     serialib *titi = new serialib();
@@ -171,6 +176,7 @@ int CompteurElectrique::lireValeursReseauFacteurPuissance()
 
     if (CosphiBytes == 17)
     {
+
         uint16_t crcRecu = answer[15] | (answer[16] << 8);
         uint16_t crcCalcule = calculer_crc(answer, 15);
 
@@ -179,6 +185,7 @@ int CompteurElectrique::lireValeursReseauFacteurPuissance()
             cout << "CRC faux" << endl;
             cout << "CRC reçu: 0x" << hex << crcRecu << endl;
             cout << "CRC calculé: 0x" << hex << crcCalcule << endl;
+            cout << "cout 5" << endl;
             return -3;
         }
         else
@@ -213,6 +220,69 @@ int CompteurElectrique::lireValeursReseauFacteurPuissance()
     }
 }
 
+/*int CompteurElectrique::lireValeursReseauFacteurPuissance()
+{
+    // Envoi de la commande de lecture des valeurs du réseau
+    unsigned char tables[] = {adresse, 0x04, 00, 25, 00, 06, 0x61, 0xC3};
+    unsigned char answer[17];
+
+    serialib *titi = new serialib();
+    char codeErreur = titi->openDevice("/dev/ttyUSB0", 9600);
+
+    // Vérification de l'ouverture du dispositif série
+    if (codeErreur != 0) {
+        cout << "Erreur d'ouverture du dispositif série" << endl;
+        return -1;
+    }
+
+    // Envoi de la commande de lecture
+    char NbBytes = titi->writeBytes(tables, 8);
+    if (NbBytes != 8) {
+        cout << "Erreur d'envoi de la commande de lecture" << endl;
+        return -1;
+    }
+
+    // Lecture des valeurs du réseau
+    int CosphiBytes = titi->readBytes(answer, 17, 5000);
+    if (CosphiBytes != 17) {
+        cout << "Erreur de lecture des valeurs du réseau" << endl;
+        return -1;
+    }
+
+    // Vérification du CRC
+    uint16_t crcRecu = answer[15] | (answer[16] << 8);
+    uint16_t crcCalcule = calculer_crc(answer, 15);
+    if (crcRecu != crcCalcule) {
+        cout << "Erreur de CRC" << endl;
+        return -1;
+    }
+
+    // Calcul des facteurs de puissance pour chaque phase
+    unsigned char phase[4];
+    phase[0] = answer[3];
+    phase[1] = answer[4];
+    phase[2] = answer[5];
+    phase[3] = answer[6];
+    FacteurPuissance_reseau[0] = calculerFacteurPuissance(phase);
+
+    phase[0] = answer[7];
+    phase[1] = answer[8];
+    phase[2] = answer[9];
+    phase[3] = answer[10];
+    FacteurPuissance_reseau[1] = calculerFacteurPuissance(phase);
+
+    phase[0] = answer[11];
+    phase[1] = answer[12];
+    phase[2] = answer[13];
+    phase[3] = answer[14];
+    FacteurPuissance_reseau[2] = calculerFacteurPuissance(phase);
+
+    // Fermeture du dispositif série
+    titi->closeDevice();
+
+    return 0;
+}*/
+
 float CompteurElectrique::calculerTension(unsigned char tension[4])
 {
     int tension16 = tension[0];
@@ -241,7 +311,7 @@ float CompteurElectrique::calculerIntensite(unsigned char intensite[4])
     intensite16 += intensite[3] - 0x5A;
 
     float INTENSITE = intensite16;
-    
+
     INTENSITE = INTENSITE / 10000.0f;
 
     return INTENSITE;
@@ -258,7 +328,7 @@ float CompteurElectrique::calculerFacteurPuissance(unsigned char facteurP[4])
     facteurP16 += facteurP[3];
 
     float FACTEURPUISSANCE = facteurP16;
-    
+
     FACTEURPUISSANCE = FACTEURPUISSANCE / 10000.0f;
 
     return FACTEURPUISSANCE;
