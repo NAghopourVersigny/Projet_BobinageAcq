@@ -1,26 +1,23 @@
-#ifndef BDD_H
-#define BDD_H
+#ifndef DATABASEMANAGER_H
+#define DATABASEMANAGER_H
 
 #include <string>
-#include "../../../mariadb-connector-cpp-1.0.2-rhel9-amd64/include/mariadb/conncpp.hpp"
+#include <mariadb/conncpp.hpp>
 
 using namespace std;
 using namespace sql;
 
-class BDD{
+class DatabaseManager
+{
 
-private :
+private:
+    SQLString url;
 
-SQLString url;
-
-
-public :
-
-BDD(SQLString url);
-SQLString getURL();
-
-
+public:
+    DatabaseManager();
+    string executerRequete(string SQLStringQuery);
+    SQLString getURL();
+    unique_ptr<Connection> SeConnecterBDD();
 };
-
 
 #endif
