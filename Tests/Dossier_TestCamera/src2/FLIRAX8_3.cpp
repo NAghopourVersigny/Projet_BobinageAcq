@@ -27,16 +27,17 @@ void FLIR_AX8::Deconnection_Modbus()
  * Attention ! La clé ssh de la caméra doit, au préalable, avoir été ajoutée à la liste des hôtes connus
  * en faisant une connexion ssh par exemple
  * Faire en sudo... pour la suite (tous les utilisateurs doivent avoir la clé)
-*/
+ */
 int FLIR_AX8::requerir_Image()
 {
- 	Username = "fliruser";
+	Username = "fliruser";
 	hostIP = "neco-10655D.local";
 	chemin = "/var/www/html/img/";
-	std::string composite = "sshpass -p 3vlig scp -o StrictHostKeyChecking=no " + Username + "@" + hostIP + ":/FLIR/system/images/""*.jpg " + chemin;
+	std::string composite = "sshpass -p 3vlig scp -o StrictHostKeyChecking=no " + Username + "@" + hostIP + ":/FLIR/system/images/"
+																											"*.jpg " +
+							chemin;
 	strcpy(command, composite.c_str());
 
-	
 	int reussi = system(command);
 	if (reussi == 0)
 	{
@@ -45,129 +46,156 @@ int FLIR_AX8::requerir_Image()
 	else
 	{
 		return -1;
-	} 
+	}
 }
 
 void FLIR_AX8::store_Image()
 {
+	uint16_t execute = 1;
+	mb->modbus_connect();
 	mb->modbus_set_slave_id(SLAVE_ID_IMAGE);
 	mb->modbus_write_registers(REGISTER_STORE_IMAGE, 1, &execute);
+	mb->modbus_close();
 }
 
 float FLIR_AX8::acquerirTempMoy()
 {
+	mb->modbus_connect();
 	uint16_t tempmoy[2];
 	int valeur;
 	mb->modbus_set_slave_id(SLAVE_ID_BASIC);
 	mb->modbus_read_holding_registers(AVERAGE_TEMP, 2, tempmoy);
 	valeur = (tempmoy[1] << 16) + tempmoy[0];
+	mb->modbus_close();
 	return valeur;
 }
 
 float FLIR_AX8::acquerirTempMax()
 {
+	mb->modbus_connect();
 	uint16_t tempMax[2];
 	int valeur;
 	mb->modbus_set_slave_id(SLAVE_ID_BASIC);
 	mb->modbus_read_holding_registers(MAXIMUM_TEMP, 2, tempMax);
 	valeur = tempMax[1];
-	valeur = (valeur<< 16) + tempMax[0];
-	
+	valeur = (valeur << 16) + tempMax[0];
+	mb->modbus_close();
 	return valeur;
 }
 
 float FLIR_AX8::acquerirTempMin()
 {
+	mb->modbus_connect();
 	uint16_t tempMin[2];
 	int valeur;
 
 	mb->modbus_set_slave_id(SLAVE_ID_BASIC);
 	mb->modbus_read_holding_registers(MIMINUM_TEMP, 2, tempMin);
 	valeur = (tempMin[1] << 16) + tempMin[0];
+	mb->modbus_close();
 	return valeur;
 }
 
-size_t FLIR_AX8::WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output) {
-    size_t totalSize = size * nmemb;
-    output->append((char*)contents, totalSize);
-    return totalSize;
+size_t FLIR_AX8::WriteCallback(void *contents, size_t size, size_t nmemb, std::string *output)
+{
+	size_t totalSize = size * nmemb;
+	output->append((char *)contents, totalSize);
+	return totalSize;
 }
 
-CURLcode FLIR_AX8::perform_request(const string& url, const string& username, const string& password, string& response, bool isPost, const string& postData) {
-    CURL* curl = curl_easy_init();
-    if (!curl) {
-        cout << "Erreur d'initialisation de CURL" << endl;
-        return CURLE_FAILED_INIT;
-    }
+CURLcode FLIR_AX8::perform_request(const string &url, const string &username, const string &password, string &response, bool isPost, const string &postData)
+{
+	CURL *curl = curl_easy_init();
+	if (!curl)
+	{
+		cout << "Erreur d'initialisation de CURL" << endl;
+		return CURLE_FAILED_INIT;
+	}
 
-    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(curl, CURLOPT_USERPWD, (username + ":" + password).c_str());  // Authentification
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(curl, CURLOPT_USERPWD, (username + ":" + password).c_str()); // Authentification
+	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
-    // Si on utilise POST
-    if (isPost) {
-        curl_easy_setopt(curl, CURLOPT_POST, 1L);
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postData.c_str());
-    }
+	// Si on utilise POST
+	if (isPost)
+	{
+		curl_easy_setopt(curl, CURLOPT_POST, 1L);
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postData.c_str());
+	}
 
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-    curl_easy_setopt(curl, CURLOPT_COOKIEFILE, "cookies.txt");  // Lire les cookies
-    curl_easy_setopt(curl, CURLOPT_COOKIEJAR, "cookies.txt");  // Sauvegarder les cookies
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+	curl_easy_setopt(curl, CURLOPT_COOKIEFILE, "cookies.txt"); // Lire les cookies
+	curl_easy_setopt(curl, CURLOPT_COOKIEJAR, "cookies.txt");  // Sauvegarder les cookies
 
-    CURLcode res = curl_easy_perform(curl);
+	CURLcode res = curl_easy_perform(curl);
 
-    if (res != CURLE_OK) {
-        cout << "Erreur CURL : " << curl_easy_strerror(res) << endl;
-    }
+	if (res != CURLE_OK)
+	{
+		cout << "Erreur CURL : " << curl_easy_strerror(res) << endl;
+	}
 
-    curl_easy_cleanup(curl);
-    return res;
+	curl_easy_cleanup(curl);
+	return res;
 }
 
-string FLIR_AX8::get_image_mode() {
-    string response;
-    string url = "http://neco-10655d.local/home/getviewmode";
+string FLIR_AX8::get_image_mode()
+{
+	string response;
+	string url = "http://neco-10655d.local/home/getviewmode";
 
-    CURLcode res = perform_request(url, "admin", "admin", response);
-    if (res == CURLE_OK) {
-        // Nettoyage retour
-        response.erase(remove(response.begin(), response.end(), '\n'), response.end());
-        return response;
-    } else {
-        return "";
-    }
+	CURLcode res = perform_request(url, "admin", "admin", response);
+	if (res == CURLE_OK)
+	{
+		// Nettoyage retour
+		response.erase(remove(response.begin(), response.end(), '\n'), response.end());
+		return response;
+	}
+	else
+	{
+		return "";
+	}
 }
 
-void FLIR_AX8::set_image_mode_IR() {
-    string response;
-    string url = "http://neco-10655d.local/home/setviewmode/IR";
+void FLIR_AX8::set_image_mode_IR()
+{
+	string response;
+	string url = "http://neco-10655d.local/home/setviewmode/IR";
 
-    CURLcode res = perform_request(url, "admin", "admin", response);
-    if (res == CURLE_OK) {
-        cout << "Mode changé vers IR" << endl;
-    } else {
-        cout << "Erreur lors du changement vers IR" << endl;
-    }
+	CURLcode res = perform_request(url, "admin", "admin", response);
+	if (res == CURLE_OK)
+	{
+		cout << "Mode changé vers IR" << endl;
+	}
+	else
+	{
+		cout << "Erreur lors du changement vers IR" << endl;
+	}
 }
 
-void FLIR_AX8::set_image_mode_VISUAL() {
-    string response;
-    string url = "http://neco-10655d.local/home/setviewmode/VISUAL";
+void FLIR_AX8::set_image_mode_VISUAL()
+{
+	string response;
+	string url = "http://neco-10655d.local/home/setviewmode/VISUAL";
 
-    CURLcode res = perform_request(url, "admin", "admin", response);
-    if (res == CURLE_OK) {
-        cout << "Mode changé vers VISUAL" << endl;
-    } else {
-        cout << "Erreur lors du changement vers VISUAL" << endl;
-    }
+	CURLcode res = perform_request(url, "admin", "admin", response);
+	if (res == CURLE_OK)
+	{
+		cout << "Mode changé vers VISUAL" << endl;
+	}
+	else
+	{
+		cout << "Erreur lors du changement vers VISUAL" << endl;
+	}
 }
 
 bool FLIR_AX8::alarme()
 {
 	uint16_t Rep[1];
+	mb->modbus_connect();
 	mb->modbus_set_slave_id(106);
-	mb->modbus_read_holding_registers(4001,1,Rep);
+	mb->modbus_read_holding_registers(4001, 1, Rep);
+	mb->modbus_close();
 	return Rep;
 }
 
@@ -210,3 +238,48 @@ string FLIR_AX8::resolveHostname(const std::string &hostname)
 	return ipstr;
 }
 
+void FLIR_AX8::toggle_isotherm_enable()
+{
+
+	mb->modbus_connect();
+	mb->modbus_set_slave_id(104);
+
+	uint16_t current_value = 0;
+
+	// Lecture initiale
+	mb->modbus_read_holding_registers(4001, 1, &current_value);
+	cout << "Valeur lue du registre 4001 : " << current_value << endl;
+
+	uint16_t new_value = (current_value == 0) ? 1 : 0;
+
+	// Écriture
+	mb->modbus_write_register(4001, new_value);
+
+	// Lecture après écriture
+	uint16_t verify_value = 0;
+	mb->modbus_read_holding_registers(4001, 1, &verify_value);
+	cout << "Valeur après écriture : " << verify_value << endl;
+
+	cout << "Mode isotherm changé : " << (new_value ? "ON" : "OFF") << endl;
+
+	mb->modbus_close();
+}
+
+void FLIR_AX8::OneShotimage(){
+
+	mb->modbus_connect();
+	mb->modbus_set_slave_id(103);
+
+	uint16_t current_value = 0;
+
+	mb->modbus_read_holding_registers(4261, 1, &current_value);
+	uint16_t new_value = (current_value == 0) ? 1 : 0;
+	mb->modbus_write_register(4261, new_value);
+
+	uint16_t current_value2 = 0;
+
+	mb->modbus_read_holding_registers(4281, 1, &current_value2);
+	uint16_t new_value2 = (current_value2 == 0) ? 1 : 0;
+	mb->modbus_write_register(4281, new_value);
+
+}
