@@ -1,9 +1,10 @@
 #include <vector>
 #include <algorithm>
 #include <iostream>
-#include "bdd.h"
+#include "DatabaseManager.h"
 #include "SeuilsIOT.h"
-#include "Vibration.h" //Rajouter le chemin vers le fichier Vibration.h
+#include "Camera.h"
+#include "Vibration.h"
 
 class Apprentissage
 {
@@ -11,9 +12,7 @@ class Apprentissage
 private:
     bool apprentissageTemp;
     bool apprentissageVibra;
-
-
-
+    Camera *laCamera;
 
 public:
     Apprentissage(bool apprentissageTemp, bool apprentissageVibra);
@@ -40,9 +39,4 @@ public:
      */
     void lancerApprentissageVibra(vector<Vibration> lesVibrations, SeuilsIOT * lesSeuils);
     bool validerApprentissageVibra();
-
-
-
-
-
 };
