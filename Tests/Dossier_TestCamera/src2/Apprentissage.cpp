@@ -5,8 +5,8 @@
 #include <mariadb/conncpp.hpp>
 #include "../include/Apprentissage.h"
 #include "../include/Camera.h"
-#include "../include/bdd.h"
-#include "Vibration.h" //Rajouter le chemin vers le fichier Vibration.h
+#include "../include/Vibration.h"
+#include "../include/DatabaseManager.h"
 
 using namespace std;
 using namespace sql;
@@ -19,21 +19,9 @@ Apprentissage::Apprentissage(bool apprentissageTemp, bool apprentissageVibra)
 
 bool Apprentissage::interrogerBDDTemp()
 {
-    BDD *laBDD = new BDD();
-    unique_ptr<Connection> conn = laBDD->SeConnecterBDD();
-    cout << "Préparation de la requête" << endl;
-
-    unique_ptr<PreparedStatement> stmnt(conn->prepareStatement("SELECT apprentissageTermineTemp FROM Machine WHERE id = ?"));
-    stmnt->setInt(1, 1);
-
-    cout << "Exécution de la requête" << endl;
-    unique_ptr<ResultSet> res(stmnt->executeQuery());
-
-    while (res->next())
-    {
-        cout << "apprentissageTermineTemp = " << res->getBoolean(1) << endl;
-        return res->getBoolean(1);
-    }
+    string SQLStringQuery = "SELECT apprentissageTermineTemp FROM Machine WHERE id = ?";
+    DatabaseManager *leDatabaseManager = new DatabaseManager();
+    leDatabaseManager->executerRequete(SQLStringQuery);
 
     return false;
 }
@@ -44,10 +32,11 @@ void Apprentissage::lancerApprentissageTemp(Camera *laCamera, SeuilsIOT *lesSeui
     vector<float> tempMax;
     float seuilTempMax;
     float seuilTempMoy;
-    if (apprentissageTemp == false)
+
+    cin >> apprentissageTemp;
+    if (apprentissageTemp == 0)
     {
         int temps;
-        cout << "Saisir un temps (en secondes) pour l'apprentissage : ";
         cin >> temps;
 
         auto start = chrono::steady_clock::now();
@@ -74,46 +63,42 @@ void Apprentissage::lancerApprentissageTemp(Camera *laCamera, SeuilsIOT *lesSeui
                 seuilTempMoy = temp_Moy * 1.15f;
             }
 
-        } while (chrono::duration_cast<chrono::seconds>(chrono::steady_clock::now() - start).count() < temps);
+        } while (chrono::duration_cast<chrono::hours>(chrono::steady_clock::now() - start).count() < temps);
         lesSeuils->setSeuils_temperature(seuilTempMoy, seuilTempMax);
+        cout << seuilTempMax << endl;
+        cout << seuilTempMoy << endl;
     }
 }
 
 bool Apprentissage::validerApprentissageTemp()
 {
-    BDD *laBDD = new BDD();
-    unique_ptr<Connection> conn = laBDD->SeConnecterBDD();
-    cout << "Préparation de la requête" << endl;
-
-    unique_ptr<PreparedStatement> stmnt(conn->prepareStatement("UPDATE Machine SET apprentissageTermineTemp = 1 WHERE id = ?"));
-    stmnt->setInt(1, 1);
-
-    cout << "Exécution de la requête" << endl;
-    stmnt->execute();
+    string SQLStringQuery = "UPDATE Machine SET apprentissageTermineTemp = 1 WHERE id = ?";
+    DatabaseManager *leDatabaseManager = new DatabaseManager();
+    leDatabaseManager->executerRequete(SQLStringQuery);
 
     return true;
 }
 
+
+/*
 bool Apprentissage::interrogerBDDVibra()
 {
     BDD *laBDD = new BDD();
     unique_ptr<Connection> conn = laBDD->SeConnecterBDD();
-    cout << "Préparation de la requête" << endl;
 
     unique_ptr<PreparedStatement> stmnt(conn->prepareStatement("SELECT apprentissageTermineVibra FROM Machine WHERE id = ?"));
     stmnt->setInt(1, 1);
 
-    cout << "Exécution de la requête" << endl;
     unique_ptr<ResultSet> res(stmnt->executeQuery());
 
     while (res->next())
     {
-        cout << "apprentissageTermineVibra = " << res->getBoolean(1) << endl;
         return res->getBoolean(1);
     }
 
     return false;
 }
+
 
 void Apprentissage::lancerApprentissageVibra(vector<Vibration> lesVibrations, SeuilsIOT *lesSeuils)
 {
@@ -130,7 +115,6 @@ void Apprentissage::lancerApprentissageVibra(vector<Vibration> lesVibrations, Se
     if (this->interrogerBDDVibra() == false)
     {
         int temps;
-        cout << "Saisir un temps (en secondes) pour l'apprentissage : ";
         cin >> temps;
 
         auto start = chrono::steady_clock::now();
@@ -139,10 +123,10 @@ void Apprentissage::lancerApprentissageVibra(vector<Vibration> lesVibrations, Se
         {
             // Stockage des méthodes dans des variables
 
-            ((Vibration)lesVibrations[0])->lire();
-            TableauAxeX.push_back(((Vibration)lesVibrations[0])->getVitesseVibration());
-            TableauAxeY.push_back(((Vibration)lesVibrations[1])->getVitesseVibration());
-            TableauAxeZ.push_back(((Vibration)lesVibrations[2])->getVitesseVibration());
+            (lesVibrations[0]).lire();
+            TableauAxeX.push_back((lesVibrations[0]).getVitesseVibration());
+            TableauAxeY.push_back((lesVibrations[1]).getVitesseVibration());
+            TableauAxeZ.push_back((lesVibrations[2]).getVitesseVibration());
 
             sleep(1);
 
@@ -172,16 +156,15 @@ bool Apprentissage::validerApprentissageVibra()
 {
     BDD *laBDD = new BDD();
     unique_ptr<Connection> conn = laBDD->SeConnecterBDD();
-    cout << "Préparation de la requête" << endl;
 
     unique_ptr<PreparedStatement> stmnt(conn->prepareStatement("UPDATE Machine SET apprentissageTermineVibra = 1 WHERE id = ?"));
     stmnt->setInt(1, 1);
 
-    cout << "Exécution de la requête" << endl;
     stmnt->execute();
 
     return true;
 }
+*/
 
 Apprentissage::~Apprentissage()
 {
