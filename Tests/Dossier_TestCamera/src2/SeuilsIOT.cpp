@@ -4,7 +4,9 @@ SeuilsIOT::SeuilsIOT()
 {
     this->seuilTempMax=0;
     this->seuilTempMoy=0;
-
+    this->seuilAxeX=0;
+    this->seuilAxeY=0; 
+    this->seuilAxeZ=0;
 }
 
 void SeuilsIOT::setSeuils_temperature(float valMoy, float valMax)
@@ -31,7 +33,7 @@ float SeuilsIOT::getTempMoy()
 
 
 
-
+/*
 void SeuilsIOT::setSeuils_vibrations(float seuilAxeX, float seuilAxeY, float seuilAxeZ)
 {
     seuilAxeX=seuilAxeX;
@@ -39,16 +41,21 @@ void SeuilsIOT::setSeuils_vibrations(float seuilAxeX, float seuilAxeY, float seu
     seuilAxeZ=seuilAxeZ; 
 }
 
-float SeuilsIOT::getTempMax()
+float SeuilsIOT::getSeuilAlertVibX()()
 {
-    return seuilTempMax;
+    return seuilAxeX;
 }
 
-float SeuilsIOT::getTempMoy()
+float SeuilsIOT::getSeuilAlertVibY()()
 {
-    return seuilTempMoy;
+    return seuilAxeY;
 }
 
+float SeuilsIOT::getSeuilAlertVibXZ)()
+{
+    return seuilAxeZ;
+}
+*/
 SeuilsIOT::~SeuilsIOT()
 {
     //destructeur
