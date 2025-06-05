@@ -36,7 +36,7 @@ private:
 	//string Image;
 	char Address;
 	
-	uint16_t execute = 1;
+
 	uint16_t nothing = 0;
 	
 	modbus * mb;
@@ -77,8 +77,12 @@ void set_image_mode(int mode);
 	void set_image_mode_IR();
 	void set_image_mode_VISUAL();
 	int mettre_visible();
+	void set_image_mode_modbus(bool thermalOn);
 
- 
+ 	void toggle_isotherm_enable();
+	void OneShotimage();
+
+
 	int supprimer_image();
 
 	//void obtenirEvent();
