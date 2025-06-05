@@ -88,7 +88,7 @@ CREATE TABLE Machine (
 /* Table : Temperature */
 
 CREATE TABLE Temperature (
-    id INTEGER NOT NULL, 
+    id INTEGER PRIMARY KEY AUTO_INCREMENT,
     date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, 
      tempMoy FLOAT NOT NULL, 
     tempMax FLOAT NOT NULL, 
