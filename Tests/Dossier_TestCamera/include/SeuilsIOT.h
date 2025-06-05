@@ -5,10 +5,10 @@
 class SeuilsIOT 
 {
 private:
-    float seuilTempMax, seuilTempMoy;
+    float seuilTempMax, seuilTempMoy, seuilAxeX, seuilAxeY, seuilAxeZ;
     float AlerteVibX, AlerteVibY, AlerteVibZ;
     float AlarmeVibX, AlarmeVibY, AlarmeVibZ;
-    
+
 public:
     SeuilsIOT();
     ~SeuilsIOT();
