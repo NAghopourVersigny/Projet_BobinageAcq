@@ -1,5 +1,5 @@
-#ifndef BDD_H
-#define BDD_H
+#ifndef DATABASEMANAGER_H
+#define DATABASEMANAGER_H
 
 #include <string>
 #include <mariadb/conncpp.hpp>
@@ -7,20 +7,17 @@
 using namespace std;
 using namespace sql;
 
-class BDD{
+class DatabaseManager
+{
 
-private :
+private:
+    SQLString url;
 
-SQLString url;
-
-
-public :
-
-BDD();
-SQLString getURL();
-
-unique_ptr<Connection> SeConnecterBDD();
+public:
+    DatabaseManager();
+    string executerRequete(string SQLStringQuery);
+    SQLString getURL();
+    unique_ptr<Connection> SeConnecterBDD();
 };
-
 
 #endif
