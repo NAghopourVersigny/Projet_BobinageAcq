@@ -409,3 +409,6 @@ vector<float> CompteurElectrique::getFacteurPuissanceReseau()
 
     return FacteurPuissance_reseau;
 }
+CompteurElectrique::~CompteurElectrique() {
+    // ok
+}

@@ -1,12 +1,10 @@
 #include "../include/EtatReseau.h"
 #include "../include/DatabaseManager.h"
-#include <chrono>
-#include <iostream>
-#include <cstring>
 
-EtatReseau::EtatReseau(CompteurElectrique* leCompteurReseau)
+
+EtatReseau::EtatReseau()
 {
-    this->leCompteurReseau = leCompteurReseau;
+    this->leCompteurReseau = new CompteurElectrique();
 
     Tension_reseau = vector<float>(3);
     Intensite_reseau = vector<float>(3);
@@ -24,10 +22,11 @@ void EtatReseau::acquerirEtatReseau()
     FacteurPuissance_reseau = leCompteurReseau->getFacteurPuissanceReseau();
 }
 
-void EtatReseau::enregistrerReseau(string dateHeure, DatabaseManager * db) //envoie des donnees vers la BDD
+void EtatReseau::enregistrerEtatReseau(DatabaseManager *leDatabaseManager)  //, int id_Machine) //envoie des donnees vers la BDD
 {
-    string query = "INSERT INTO Contexte (tension1, tesnion2, tension3, intentite1, intensite2, intensite3, cosPhi1, cosPhi2, cosPhi3)) VALUES (" + to_string(Tension_reseau[0]) + "," + to_string(Tension_reseau[1]) + "," + to_string(Tension_reseau[2]) + "," + to_string(Intensite_reseau[0]) + "," + to_string(Intensite_reseau[1]) + "," + to_string(Intensite_reseau[2]) + "," + to_string(FacteurPuissance_reseau[0]) + "," + to_string(FacteurPuissance_reseau[1]) + "," + to_string(FacteurPuissance_reseau[2]) + ")";
-    DatabaseManager *leDatabaseManager = new DatabaseManager();
+    //string query = "INSERT INTO Contexte (date, tension1, tension2, tension3, intensite1, intensite2, intensite3, cosPhi1, cosPhi2, cosPhi3) VALUES (" + dateHeure + "," + to_string(Tension_reseau[0]) + "," + to_string(Tension_reseau[1]) + "," + to_string(Tension_reseau[2]) + "," + to_string(Intensite_reseau[0]) + "," + to_string(Intensite_reseau[1]) + "," + to_string(Intensite_reseau[2]) + "," + to_string(FacteurPuissance_reseau[0]) + "," + to_string(FacteurPuissance_reseau[1]) + "," + to_string(FacteurPuissance_reseau[2]) + ")";
+    string query = "UPDATE Contexte SET tension1 = " + to_string(Tension_reseau[0]) + ", tension2 = " + to_string(Tension_reseau[1]) + ", tension3 = " + to_string(Tension_reseau[2]) + ", intensite1 = " + to_string(Intensite_reseau[0]) + ", intensite2 = " + to_string(Intensite_reseau[1]) + ", intensite3 = " + to_string(Intensite_reseau[2]) + ", cosPhi1 = " + to_string(FacteurPuissance_reseau[0]) + ", cosPhi2 = " + to_string(FacteurPuissance_reseau[1]) + ", cosPhi3 = " + to_string(FacteurPuissance_reseau[2]) + " WHERE id = (SELECT MAX(id) FROM Contexte);";
+    //cout<< query <<endl;
     leDatabaseManager->executerRequete(query);
 }
 

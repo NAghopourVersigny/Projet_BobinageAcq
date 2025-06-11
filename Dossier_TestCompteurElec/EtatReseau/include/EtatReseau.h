@@ -2,6 +2,14 @@
 #define ETATESEAU_H
 #include <vector>
 
+#include <chrono>
+
+#include <cstring>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
+#include <string>
+
 #include "../include/serialib.h"
 #include "../include/CompteurElectrique.h"
 #include "../include/Logger.h"
@@ -21,13 +29,15 @@ private:
 
 public:     
 
-    EtatReseau(CompteurElectrique* leCompteurReseau);
+    EtatReseau();
     void acquerirEtatReseau();
-    void enregistrerReseau(string dateHeure, DatabaseManager * db);
+    void enregistrerEtatReseau(DatabaseManager *leDatabaseManager);//, int id_Machine);
 
     vector<float> getTension_Reseau();
     vector<float> getIntensite_Reseau();
     vector<float> getFacteurPuissance_Reseau();
+
+
 };
 
 #endif
