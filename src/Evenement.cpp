@@ -1,5 +1,10 @@
 #include "../include/Evenement.h"
 
+Evenement::Evenement() {
+    this->type = "type";
+    this->dateheure= "2025-06-11 14:05:30";
+}
+
 Evenement::Evenement(string type, string dateheure)
 {
     this->type = type;
@@ -8,10 +13,10 @@ Evenement::Evenement(string type, string dateheure)
 
 string Evenement::getType()
 {
-    return type;
+    return this->type;
 }
 
 string Evenement::getDateHeure()
 {
-    return dateheure;
+    return this->dateheure;
 }
