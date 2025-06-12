@@ -3,22 +3,27 @@
 #include <string>
 #include <iostream>
 
+#include "Image.h"
+
 using namespace std;
 
 class Evenement
 {
-    private : 
+private : 
+
+    Image* image;
 
     string type;
     string dateheure;
 
-    public : 
+public : 
+
+    Evenement();
 
     Evenement(string type, string dateheure);
+
     string getType();
     string getDateHeure();
-
-
 };
 
 #endif
