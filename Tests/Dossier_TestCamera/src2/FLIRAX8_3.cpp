@@ -1,6 +1,10 @@
-#include <curl/curl.h>
-#include <string>
 #include <iostream>
+#include <fstream>
+#include <vector>
+#include <thread>
+#include <chrono>
+#include <string>
+#include <curl/curl.h>
 #include "../include/FLIRAX8.h"
 #include "Poco/Net/StreamSocket.h"
 #include "Poco/Net/SocketAddress.h"
@@ -103,90 +107,196 @@ size_t FLIR_AX8::WriteCallback(void *contents, size_t size, size_t nmemb, std::s
 	return totalSize;
 }
 
-CURLcode FLIR_AX8::perform_request(const string &url, const string &username, const string &password, string &response, bool isPost, const string &postData)
-{
-	CURL *curl = curl_easy_init();
-	if (!curl)
-	{
-		cout << "Erreur d'initialisation de CURL" << endl;
-		return CURLE_FAILED_INIT;
-	}
-
-	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-	curl_easy_setopt(curl, CURLOPT_USERPWD, (username + ":" + password).c_str()); // Authentification
-	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-
-	// Si on utilise POST
-	if (isPost)
-	{
-		curl_easy_setopt(curl, CURLOPT_POST, 1L);
-		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postData.c_str());
-	}
-
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-	curl_easy_setopt(curl, CURLOPT_COOKIEFILE, "cookies.txt"); // Lire les cookies
-	curl_easy_setopt(curl, CURLOPT_COOKIEJAR, "cookies.txt");  // Sauvegarder les cookies
-
-	CURLcode res = curl_easy_perform(curl);
-
-	if (res != CURLE_OK)
-	{
-		cout << "Erreur CURL : " << curl_easy_strerror(res) << endl;
-	}
-
-	curl_easy_cleanup(curl);
-	return res;
+size_t FLIR_AX8::write_to_string(void *contents, size_t size, size_t nmemb, void *userp) {
+    size_t total_size = size * nmemb;
+    ((std::string*)userp)->append((char*)contents, total_size);
+    return total_size;
 }
 
-string FLIR_AX8::get_image_mode()
-{
-	string response;
-	string url = "http://neco-10655d.local/home/getviewmode";
-
-	CURLcode res = perform_request(url, "admin", "admin", response);
-	if (res == CURLE_OK)
-	{
-		// Nettoyage retour
-		response.erase(remove(response.begin(), response.end(), '\n'), response.end());
-		return response;
-	}
-	else
-	{
-		return "";
-	}
+size_t FLIR_AX8::write_to_file(void *ptr, size_t size, size_t nmemb, void *stream) {
+    size_t written = fwrite(ptr, size, nmemb, (FILE *)stream);
+    return written;
 }
 
-void FLIR_AX8::set_image_mode_IR()
+int FLIR_AX8::set_image_mode_IR()
 {
-	string response;
-	string url = "http://neco-10655d.local/home/setviewmode/IR";
 
-	CURLcode res = perform_request(url, "admin", "admin", response);
-	if (res == CURLE_OK)
-	{
-		cout << "Mode changé vers IR" << endl;
-	}
-	else
-	{
-		cout << "Erreur lors du changement vers IR" << endl;
-	}
+	CURL *curl;
+    CURLcode res;
+    std::string read_buffer;
+
+    const std::string login_url = "http://neco-10655d.local/login/dologin";
+    const std::string snapshot_url = "http://neco-10655d.local/snapshot.jpg";
+    const std::vector<std::string> viewmodes = {"IR"};
+
+    // Fichier pour stocker les cookies
+    const char* cookie_file = "cookies.txt";
+
+    curl_global_init(CURL_GLOBAL_ALL);
+    curl = curl_easy_init();
+
+    if (curl) {
+        // 1. Authentification
+        std::string post_fields = "user_name=admin&user_password=admin";
+        curl_easy_setopt(curl, CURLOPT_URL, login_url.c_str());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_fields.c_str());
+
+        // Stockage des cookies
+        curl_easy_setopt(curl, CURLOPT_COOKIEJAR, cookie_file);
+        curl_easy_setopt(curl, CURLOPT_COOKIEFILE, cookie_file);
+
+        // Capture de la réponse
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_to_string);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &read_buffer);
+
+        res = curl_easy_perform(curl);
+        if (res != CURLE_OK || read_buffer.find("success") == std::string::npos) {
+            std::cerr << " Authentification échouée.\n";
+            curl_easy_cleanup(curl);
+            return 1;
+        }
+        std::cout << "Authentification réussie.\n";
+        read_buffer.clear();
+
+        // 2. Pour chaque mode, changer le viewmode et récupérer le snapshot
+        for (const auto& mode : viewmodes) {
+            std::string mode_url = "http://neco-10655d.local/home/setviewmode/" + mode;
+
+            // Changer le mode
+            curl_easy_setopt(curl, CURLOPT_URL, mode_url.c_str());
+            curl_easy_setopt(curl, CURLOPT_HTTPGET, 0L);  // mode POST
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "");  // POST vide
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_to_string);
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &read_buffer);
+            res = curl_easy_perform(curl);
+            if (res != CURLE_OK) {
+                std::cerr << "Erreur POST setviewmode " << mode << "\n";
+                continue;
+            }
+            std::cout << " Passage au mode " << mode << "\n";
+            read_buffer.clear();
+
+            // Pause d'1 seconde pour laisser le temps au changement
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+
+            // Télécharger l'image
+            curl_easy_setopt(curl, CURLOPT_URL, snapshot_url.c_str());
+            curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
+
+            std::string filename = mode + ".jpg";
+            FILE *fp = fopen(filename.c_str(), "wb");
+            if (!fp) {
+                std::cerr << "Impossible d’ouvrir " << filename << "\n";
+                continue;
+            }
+
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_to_file);
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+            res = curl_easy_perform(curl);
+            fclose(fp);
+
+            if (res == CURLE_OK) {
+                std::cout << " Image enregistrée : " << filename << "\n";
+            } else {
+                std::cerr << " Erreur téléchargement image : " << curl_easy_strerror(res) << "\n";
+            }
+        }
+
+        curl_easy_cleanup(curl);
+    }
+
+    curl_global_cleanup();
+    return 0;
 }
 
-void FLIR_AX8::set_image_mode_VISUAL()
+int FLIR_AX8::set_image_mode_VISUAL()
 {
-	string response;
-	string url = "http://neco-10655d.local/home/setviewmode/VISUAL";
+	CURL *curl;
+    CURLcode res;
+    std::string read_buffer;
 
-	CURLcode res = perform_request(url, "admin", "admin", response);
-	if (res == CURLE_OK)
-	{
-		cout << "Mode changé vers VISUAL" << endl;
-	}
-	else
-	{
-		cout << "Erreur lors du changement vers VISUAL" << endl;
-	}
+    const std::string login_url = "http://neco-10655d.local/login/dologin";
+    const std::string snapshot_url = "http://neco-10655d.local/snapshot.jpg";
+    const std::vector<std::string> viewmodes = {"VISUAL"};
+
+    // Fichier pour stocker les cookies
+    const char* cookie_file = "cookies.txt";
+
+    curl_global_init(CURL_GLOBAL_ALL);
+    curl = curl_easy_init();
+
+    if (curl) {
+        // 1. Authentification
+        std::string post_fields = "user_name=admin&user_password=admin";
+        curl_easy_setopt(curl, CURLOPT_URL, login_url.c_str());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_fields.c_str());
+
+        // Stockage des cookies
+        curl_easy_setopt(curl, CURLOPT_COOKIEJAR, cookie_file);
+        curl_easy_setopt(curl, CURLOPT_COOKIEFILE, cookie_file);
+
+        // Capture de la réponse
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_string);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &read_buffer);
+
+        res = curl_easy_perform(curl);
+        if (res != CURLE_OK || read_buffer.find("success") == std::string::npos) {
+            std::cerr << " Authentification échouée.\n";
+            curl_easy_cleanup(curl);
+            return 1;
+        }
+        std::cout << "Authentification réussie.\n";
+        read_buffer.clear();
+
+        // 2. Pour chaque mode, changer le viewmode et récupérer le snapshot
+        for (const auto& mode : viewmodes) {
+            std::string mode_url = "http://neco-10655d.local/home/setviewmode/" + mode;
+
+            // Changer le mode
+            curl_easy_setopt(curl, CURLOPT_URL, mode_url.c_str());
+            curl_easy_setopt(curl, CURLOPT_HTTPGET, 0L);  // mode POST
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "");  // POST vide
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_string);
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &read_buffer);
+            res = curl_easy_perform(curl);
+            if (res != CURLE_OK) {
+                std::cerr << "Erreur POST setviewmode " << mode << "\n";
+                continue;
+            }
+            std::cout << " Passage au mode " << mode << "\n";
+            read_buffer.clear();
+
+            // Pause d'1 seconde pour laisser le temps au changement
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+
+            // Télécharger l'image
+            curl_easy_setopt(curl, CURLOPT_URL, snapshot_url.c_str());
+            curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
+
+            std::string filename = mode + ".jpg";
+            FILE *fp = fopen(filename.c_str(), "wb");
+            if (!fp) {
+                std::cerr << "Impossible d’ouvrir " << filename << "\n";
+                continue;
+            }
+
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_to_file);
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+            res = curl_easy_perform(curl);
+            fclose(fp);
+
+            if (res == CURLE_OK) {
+                std::cout << " Image enregistrée : " << filename << "\n";
+            } else {
+                std::cerr << " Erreur téléchargement image : " << curl_easy_strerror(res) << "\n";
+            }
+        }
+
+        curl_easy_cleanup(curl);
+    }
+
+    curl_global_cleanup();
+    return 0;
 }
 
 bool FLIR_AX8::alarme()
