@@ -3,32 +3,30 @@
 #include <string>
 #include <iostream>
 
+#include "DatabaseManager.h"
+
 using namespace std;
 
 class Vibration
 {
 private:
+
     string axe;
-    float asymetrie;
-    float moyenne;
-    float aplatissement;
-    float dispersion;
-    float efficace;
-    float min; 
-    float max;
+    float vitesseVibration;
     string dateheure;
 
 public:
-    Vibration(string axe, float asymetrie, float moyenne, float aplatissement, float dispersion, float efficace, float min, float max, string dateheure);
+
+    Vibration(string axe);
+
+
     string getAxe();
-    float getAsymetrie();
-    float getMoyenne();
-    float getAplatissement();
-    float getDispersion();
-    float getEfficace();
-    float getMin();
-    float getMax();
-    string getDateHeure();
+    string getDateheure();
+    float getVitesseVibration();
+
+    void setAxe();
+    void setVitesseVibration(float vitesseVibration);
+    void setDateheure(string dateheure);
 };
 
 #endif
