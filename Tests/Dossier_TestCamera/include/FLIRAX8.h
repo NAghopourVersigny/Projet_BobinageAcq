@@ -74,8 +74,12 @@ void set_image_mode(int mode);
 	CURLcode perform_request(const string& url, const string& username, const string& password, string& response, bool isPost = false, const string& postData = "");
     static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output);
 	string get_image_mode();
-	void set_image_mode_IR();
-	void set_image_mode_VISUAL();
+	
+	static size_t write_to_string(void *contents, size_t size, size_t nmemb, void *userp);
+	static size_t write_to_file(void *ptr, size_t size, size_t nmemb, void *stream);
+	
+	int set_image_mode_IR();
+	int set_image_mode_VISUAL();
 	int mettre_visible();
 	void set_image_mode_modbus(bool thermalOn);
 
