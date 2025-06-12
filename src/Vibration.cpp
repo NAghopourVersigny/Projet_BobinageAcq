@@ -1,58 +1,42 @@
 #include "../include/Vibration.h"
 
-Vibration::Vibration(string axe, float asymetrie, float moyenne, float aplatissement, float dispersion, float efficace, float min, float max, string dateheure)
+using namespace std;
+
+Vibration::Vibration(string axe)
 {
     this->axe = axe;
-    this->asymetrie = asymetrie;
-    this->moyenne = moyenne;
-    this->aplatissement = aplatissement;
-    this->dispersion = dispersion;
-    this->efficace = efficace;
-    this->min = min;
-    this->max = max;
-    this->dateheure = dateheure;
+    this->vitesseVibration = 0;
+    this->dateheure = "2025-06-10 10:15:13";
+
 }
+
+
 string Vibration::getAxe()
 {
     return axe;
 }
 
-float Vibration::getAsymetrie()
-{
-    return asymetrie;
-}
-
-float Vibration::getMoyenne()
-{
-    return moyenne;
-}
-
-float Vibration::getAplatissement()
-{
-    return aplatissement;
-}
-
-float Vibration::getDispersion()
-{
-    return dispersion;
-}
-
-float Vibration::getEfficace()
-{
-    return efficace;
-}
-
-float Vibration::getMin()
-{
-    return min;
-}
-
-float Vibration::getMax()
-{
-    return max;
-}
-
-string Vibration::getDateHeure()
+string Vibration::getDateheure()
 {
     return dateheure;
+}
+
+float Vibration::getVitesseVibration()
+{
+    return vitesseVibration;
+}
+
+void Vibration::setAxe()
+{
+    this->axe = axe;
+}
+
+void Vibration::setVitesseVibration(float vitesseVibration)
+{
+    this->vitesseVibration = vitesseVibration;
+}
+
+void Vibration::setDateheure(string dateheure)
+{
+    this->dateheure = dateheure;
 }
