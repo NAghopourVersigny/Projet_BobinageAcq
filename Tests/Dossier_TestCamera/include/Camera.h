@@ -41,7 +41,8 @@ public:
     void capturer_Image();
     void recuperer_Image();
 
-    string obtenir_nom_image();
+    string obtenir_nom_image_IR();
+    string obtenir_nom_image_VISUAL();
 };
 
 #endif
