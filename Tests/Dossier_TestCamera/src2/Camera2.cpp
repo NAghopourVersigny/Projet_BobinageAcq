@@ -6,7 +6,6 @@ using namespace std::filesystem;
 Camera::Camera(string hostname)
 {
     this->flir = new FLIR_AX8(hostname);
-    cout << hostname << endl;
 }
 
 Camera::~Camera()
@@ -18,7 +17,6 @@ Camera::~Camera()
 float Camera::obtenirTempMoy()
 {
     int valeur = flir->acquerirTempMoy();
-    cout << valeur << endl;
     float mantisse, exposant, kelvin;
     int sign = valeur >> 31;
     mantisse = (valeur & 0x7FFFFF) | 0X800000;
@@ -54,25 +52,12 @@ float Camera::obtenirTempMax()
     return degree;
 }
 
-string Camera::obtenir_nom_image()
+string Camera::obtenir_nom_image_IR()
 {
-    /*string chemin = "/var/www/html/img/";
+    string chemin = "/var/www/html/img/";
     string nom;
-    if (std::filesystem::exists(chemin) && std::filesystem::is_directory(chemin))
-    {
-        // Loop through each item (file or subdirectory) in
-        // the directory
-        for (const auto &entry :
-            std::filesystem::__cxx11::directory_iterator(chemin))
-        {
-            // Output the path of the file or subdirectory
-             nom = entry.path() ;
-        }
-    }
-    return nom;*/
-    /*std::string chemin = "/var/www/html/img/";
-    std::string nom;
-    std::regex pattern("img_.*\\.jpg");  // Regex pattern for img_*.jpg
+    regex pattern("img_.*\\.jpg");  // Regex pattern for img_*.jpg
+    filesystem::file_time_type latest_time;
 
     if (fs::exists(chemin) && fs::is_directory(chemin))
     {
@@ -82,20 +67,28 @@ string Camera::obtenir_nom_image()
             // Check if the entry is a regular file and matches the pattern
             if (fs::is_regular_file(entry.status()))
             {
-                std::string filename = entry.path().filename().string();
-                if (std::regex_match(filename, pattern))
+                string filename = entry.path().filename().string();
+                if (regex_match(filename, pattern))
                 {
-                    nom = filename;  // or entry.path().string() if full path is needed
-                    //break;  // Stop after finding the first match
-                
+                    auto ftime = fs::last_write_time(entry);
+                    if (nom.empty() || ftime > latest_time)
+                    {
+                        latest_time = ftime;
+                        nom = filename;  // or entry.path().string() if full path is needed
+                    }
+                }
             }
         }
     }
-    return nom;*/
-    std::string chemin = "/var/www/html/img/";
-    std::string nom;
-    std::regex pattern("img_.*\\.jpg");  // Regex pattern for img_*.jpg
-    std::filesystem::file_time_type latest_time;
+    return nom;
+}
+
+string Camera::obtenir_nom_image_VISUAL()
+{
+    string chemin = "/var/www/html/img/";
+    string nom;
+    regex pattern("img_.*\\.jpg");  // Regex pattern for img_*.jpg
+    filesystem::file_time_type latest_time;
 
     if (fs::exists(chemin) && fs::is_directory(chemin))
     {
@@ -105,8 +98,8 @@ string Camera::obtenir_nom_image()
             // Check if the entry is a regular file and matches the pattern
             if (fs::is_regular_file(entry.status()))
             {
-                std::string filename = entry.path().filename().string();
-                if (std::regex_match(filename, pattern))
+                string filename = entry.path().filename().string();
+                if (regex_match(filename, pattern))
                 {
                     auto ftime = fs::last_write_time(entry);
                     if (nom.empty() || ftime > latest_time)
